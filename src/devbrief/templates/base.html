@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}devbrief{% endblock %}</title>
+<script src="https://unpkg.com/htmx.org@1.9.12" integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2" crossorigin="anonymous"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3d;
+      --text: #e2e8f0;
+      --muted: #6b7280;
+      --accent: #6366f1;
+
+      --error:   #f87171;
+      --warn:    #fbbf24;
+      --info:    #34d399;
+      --debug:   #9ca3af;
+      --unknown: #6b7280;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: ui-monospace, "Cascadia Code", "Fira Code", monospace;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    header {
+      padding: 12px 20px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    header h1 { font-size: 16px; font-weight: 600; }
+    header .badge {
+      font-size: 10px;
+      background: var(--accent);
+      color: #fff;
+      padding: 1px 6px;
+      border-radius: 9999px;
+    }
+
+    main { padding: 16px 20px; display: flex; flex-direction: column; gap: 16px; }
+
+    /* ---- Metrics bar ---- */
+    #metrics {
+      display: flex;
+      gap: 16px;
+      padding: 10px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      flex-wrap: wrap;
+    }
+
+    .metric { display: flex; flex-direction: column; min-width: 110px; }
+    .metric .label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+    .metric .value { font-size: 18px; font-weight: 700; }
+    .metric .value.error { color: var(--error); }
+    .metric .value.warn  { color: var(--warn);  }
+    .metric .value.info  { color: var(--info);  }
+
+    /* ---- Filter bar ---- */
+    #filters {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    #filters select, #filters input {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-family: inherit;
+      font-size: 12px;
+    }
+
+    #filters label { font-size: 11px; color: var(--muted); }
+
+    /* ---- Log table ---- */
+    #log-table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      max-height: calc(100vh - 260px);
+      overflow-y: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 6px 10px;
+      text-align: left;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+    }
+
+    tbody tr { border-bottom: 1px solid var(--border); }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(255,255,255,.03); }
+
+    td { padding: 4px 10px; vertical-align: top; white-space: pre-wrap; word-break: break-all; }
+
+    .ts { color: var(--muted); min-width: 170px; }
+    .level-cell { min-width: 70px; font-weight: 700; }
+
+    .level-ERROR   { color: var(--error); }
+    .level-WARN    { color: var(--warn);  }
+    .level-INFO    { color: var(--info);  }
+    .level-DEBUG   { color: var(--debug); }
+    .level-UNKNOWN { color: var(--unknown); font-style: italic; }
+
+    {% block extra_style %}{% endblock %}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>devbrief logs</h1>
+    <span class="badge">LIVE</span>
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

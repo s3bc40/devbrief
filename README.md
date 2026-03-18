@@ -2,7 +2,10 @@
 
 > Project situational awareness.
 
-`devbrief` takes a GitHub URL, pulls repository metadata, README, and file tree, then asks Claude to produce a structured brief — covering what the project does, its tech stack, how to get started, and its limitations — directly in your terminal.
+`devbrief` is a developer CLI for rapid project situational awareness:
+
+- **`devbrief repo`** — takes a GitHub URL, pulls repository metadata, README, and file tree, then asks Claude to produce a structured brief directly in your terminal.
+- **`devbrief logs`** — streams a log file (or stdin) into a local browser dashboard with live filtering, level highlighting, and rolling metrics.
 
 ---
 
@@ -64,6 +67,7 @@ export ANTHROPIC_API_KEY=sk-ant-...
 ╭─ Commands ───────────────────────────────────────────────────────────────────╮
 │ repo  Analyze a GitHub repository.                                           │
 │ auth  Manage API credentials.                                                │
+│ logs  Stream logs into a live dashboard.                                     │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ```
 
@@ -96,6 +100,36 @@ devbrief auth --api-key sk-ant-...   # non-interactive
 devbrief auth --show                 # display masked stored key
 devbrief auth --clear                # remove stored key
 ```
+
+### devbrief logs
+
+```bash
+devbrief logs [FILE] [--port PORT] [--no-browser]
+```
+
+Opens a local browser dashboard at `http://127.0.0.1:7890` (default port).
+
+**Examples:**
+
+```bash
+# Visualise a log file
+devbrief logs /var/log/app.log
+
+# Pipe from a running process
+your-app 2>&1 | devbrief logs
+
+# Use a custom port
+devbrief logs /var/log/app.log --port 8080
+```
+
+| Option | Description |
+|---|---|
+| `FILE` | Path to a log file. Omit to read from stdin. |
+| `--port PORT` | Dashboard port (default: `7890`) |
+| `--no-browser` | Do not open the browser automatically |
+| `--help` | Show usage and exit |
+
+The dashboard auto-detects common log formats (JSON structured logs, ISO timestamp prefix, `[LEVEL]`, `LEVEL:`) and supports live client-side filtering by level, keyword, and time range. New lines appended to the file appear within ~3 seconds.
 
 ---
 
@@ -180,7 +214,12 @@ src/devbrief/
 ├── cli.py               # Typer app — registers all subcommands
 ├── commands/
 │   ├── repo.py          # devbrief repo
-│   └── auth.py          # devbrief auth
+│   ├── auth.py          # devbrief auth
+│   └── logs.py          # devbrief logs — FastAPI server, log parser, ring buffer
+├── templates/
+│   ├── base.html        # Base HTML layout (HTMX)
+│   └── logs/
+│       └── dashboard.html  # Log dashboard template
 ├── core/
 │   ├── credentials.py   # API key + model resolution chain
 │   └── config.py        # Config file read/write (~/.config/devbrief/config.toml)
@@ -189,6 +228,7 @@ src/devbrief/
 └── display.py           # Rich terminal rendering
 tests/
 ├── test_credentials.py  # Credential resolution + auth command tests
+├── test_logs.py         # Log parser, ring buffer, polling endpoints
 ├── test_github.py
 └── test_display.py
 ```
