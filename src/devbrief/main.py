@@ -2,16 +2,33 @@ import time
 import click
 from dotenv import load_dotenv
 
-from devbrief.github import parse_repo_url, fetch_repo_data, fetch_readme, fetch_file_tree
+from devbrief.github import (
+    parse_repo_url,
+    fetch_repo_data,
+    fetch_readme,
+    fetch_file_tree,
+)
 from devbrief.brief import generate_brief
-from devbrief.display import show_fetching, show_generating, show_brief, show_error, show_saved
+from devbrief.display import (
+    show_fetching,
+    show_generating,
+    show_brief,
+    show_error,
+    show_saved,
+)
 
 load_dotenv()
 
 
 @click.command()
 @click.argument("github_url")
-@click.option("--output", "-o", default=None, metavar="FILE", help="Save the brief to a markdown file.")
+@click.option(
+    "--output",
+    "-o",
+    default=None,
+    metavar="FILE",
+    help="Save the brief to a markdown file.",
+)
 def cli(github_url: str, output: str | None) -> None:
     """Generate a human-readable brief for a GitHub repository."""
     try:

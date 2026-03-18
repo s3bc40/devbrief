@@ -33,6 +33,7 @@ def fetch_readme(owner: str, repo: str) -> str:
         return ""
     response.raise_for_status()
     import base64
+
     content = response.json().get("content", "")
     return base64.b64decode(content).decode("utf-8", errors="replace")
 

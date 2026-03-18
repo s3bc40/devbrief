@@ -9,10 +9,10 @@ def build_prompt(repo: dict, readme: str, file_tree: list[str]) -> str:
 
     return f"""You are a senior developer writing a concise project brief for a technical audience.
 
-Repository: {repo['name']}
-Description: {repo['description'] or 'No description provided.'}
-Stars: {repo['stars']}
-Primary language: {repo['language'] or 'unknown'}
+Repository: {repo["name"]}
+Description: {repo["description"] or "No description provided."}
+Stars: {repo["stars"]}
+Primary language: {repo["language"] or "unknown"}
 Topics: {topics_str}
 
 Top-level file tree:

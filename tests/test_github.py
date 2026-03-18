@@ -14,6 +14,7 @@ from devbrief.github import (
 # parse_repo_url
 # ---------------------------------------------------------------------------
 
+
 class TestParseRepoUrl:
     def test_standard_url(self):
         assert parse_repo_url("https://github.com/anthropics/anthropic-sdk-python") == (
@@ -32,6 +33,7 @@ class TestParseRepoUrl:
 # ---------------------------------------------------------------------------
 # fetch_repo_data
 # ---------------------------------------------------------------------------
+
 
 class TestFetchRepoData:
     def test_maps_api_fields(self, mocker):
@@ -73,6 +75,7 @@ class TestFetchRepoData:
 # fetch_readme
 # ---------------------------------------------------------------------------
 
+
 class TestFetchReadme:
     def test_decodes_base64_content(self, mocker):
         encoded = base64.b64encode(b"# Hello World\n").decode()
@@ -104,6 +107,7 @@ class TestFetchReadme:
 # fetch_file_tree
 # ---------------------------------------------------------------------------
 
+
 class TestFetchFileTree:
     def test_returns_names_list(self, mocker):
         mock_response = MagicMock()
@@ -115,7 +119,11 @@ class TestFetchFileTree:
         ]
         mocker.patch("devbrief.github.requests.get", return_value=mock_response)
 
-        assert fetch_file_tree("owner", "repo") == ["src", "README.md", "pyproject.toml"]
+        assert fetch_file_tree("owner", "repo") == [
+            "src",
+            "README.md",
+            "pyproject.toml",
+        ]
 
     def test_returns_empty_list_on_404(self, mocker):
         mock_response = MagicMock()
