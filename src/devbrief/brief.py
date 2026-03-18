@@ -1,4 +1,3 @@
-import os
 import anthropic
 
 
@@ -32,16 +31,14 @@ Write a structured project brief with exactly these sections:
 Be concise. Do not repeat the section headers verbatim — use them as guidance only."""
 
 
-def generate_brief(repo: dict, readme: str, file_tree: list[str]) -> str:
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        raise EnvironmentError("ANTHROPIC_API_KEY environment variable is not set.")
-
+def generate_brief(
+    repo: dict, readme: str, file_tree: list[str], *, api_key: str, model: str
+) -> str:
     client = anthropic.Anthropic(api_key=api_key)
     prompt = build_prompt(repo, readme, file_tree)
 
     message = client.messages.create(
-        model="claude-opus-4-6",
+        model=model,
         max_tokens=1024,
         messages=[{"role": "user", "content": prompt}],
     )

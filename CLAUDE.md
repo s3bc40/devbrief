@@ -64,12 +64,15 @@ devbrief/
 
 | Subcommand      | Status      | Notes                                          |
 |-----------------|-------------|------------------------------------------------|
-| devbrief repo   | LIVE        | On PyPI v0.1.0, uses click + requests (sync)  |
+| devbrief repo   | LIVE        | v0.2.0, Typer, credentials via resolve_api_key/resolve_model |
+| devbrief auth   | LIVE        | v0.2.0, key validation, config write/read/clear, 600 perms   |
 | devbrief logs   | BUILD NEXT  | CloudWatch / log stream fetcher                |
 | devbrief env    | PLANNED     | Rust entry point via maturin/PyO3              |
 | devbrief api    | PLANNED     |                                                |
 | devbrief infra  | PLANNED     |                                                |
 | devbrief pr     | PLANNED     |                                                |
+
+
 
 ---
 
@@ -109,6 +112,7 @@ devbrief/
 - **Type hints everywhere** — no untyped functions, no `Any` without explanation.
 - **Rust:** `clippy` clean, zero warnings allowed.
 - **Tests required** for every new command and every credential resolution path.
+- **Default model:** `claude-sonnet-4-6`. Never hardcode a model string in any command file. Model is always resolved via `resolve_model()` in `devbrief.core.credentials` (env var `DEVBRIEF_MODEL` → `config.toml [anthropic] default_model` → `"claude-sonnet-4-6"`).
 - **Graceful degradation:** If Rust extension is unavailable, fall back to Python implementation. Never hard-crash on missing native extension.
 - **Rich** for all terminal output — no raw `print()` in command handlers.
 
@@ -128,4 +132,5 @@ devbrief/
 
 1. [x] Create CLAUDE.md
 2. [x] Set up CI/CD pipeline (`ci.yml` + `release.yml`) — Rust steps present as commented stubs
-3. [ ] Await spec card before touching any subcommand
+3. [x] v0.2.0: CLI restructure (`devbrief repo`), `devbrief auth`, credential + model resolution
+4. [ ] Await spec card before touching any subcommand
