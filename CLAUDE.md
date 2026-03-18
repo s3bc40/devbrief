@@ -66,7 +66,7 @@ devbrief/
 |-----------------|-------------|------------------------------------------------|
 | devbrief repo   | LIVE        | v0.2.0, Typer, credentials via resolve_api_key/resolve_model |
 | devbrief auth   | LIVE        | v0.2.0, key validation, config write/read/clear, 600 perms   |
-| devbrief logs   | BUILD NEXT  | CloudWatch / log stream fetcher                |
+| devbrief logs   | LIVE        | v0.3.0, FastAPI+HTMX polling dashboard, ring buffer, file (1s tail)/stdin |
 | devbrief env    | PLANNED     | Rust entry point via maturin/PyO3              |
 | devbrief api    | PLANNED     |                                                |
 | devbrief infra  | PLANNED     |                                                |
