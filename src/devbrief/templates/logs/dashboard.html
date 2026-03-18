@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}devbrief logs — dashboard{% endblock %}
+
+{% block content %}
+
+<!-- ---------------------------------------------------------------- -->
+<!-- Metrics bar                                                       -->
+<!-- hx-get="/metrics"   — polls the /metrics endpoint every 2s      -->
+<!-- hx-swap="innerHTML" — replaces inner content on each response   -->
+<!-- ---------------------------------------------------------------- -->
+<div id="metrics"
+     hx-get="/metrics"
+     hx-trigger="every 2s"
+     hx-swap="innerHTML">
+  <div class="metric">
+    <span class="label">Total entries</span>
+    <span class="value">{{ metrics.total }}</span>
+  </div>
+  <div class="metric">
+    <span class="label">Errors / 5 min</span>
+    <span class="value error">{{ metrics.errors5 }}</span>
+  </div>
+  <div class="metric">
+    <span class="label">Warnings / 5 min</span>
+    <span class="value warn">{{ metrics.warns5 }}</span>
+  </div>
+  <div class="metric">
+    <span class="label">Entries / sec</span>
+    <span class="value info">{{ metrics.rate }}</span>
+  </div>
+</div>
+
+<!-- ---------------------------------------------------------------- -->
+<!-- Filter bar — client-side only, no server round-trip              -->
+<!-- ---------------------------------------------------------------- -->
+<div id="filters">
+  <label for="f-level">Level</label>
+  <select id="f-level">
+    <option value="">All</option>
+    <option value="ERROR">ERROR</option>
+    <option value="WARN">WARN</option>
+    <option value="INFO">INFO</option>
+    <option value="DEBUG">DEBUG</option>
+    <option value="UNKNOWN">UNKNOWN</option>
+  </select>
+
+  <label for="f-keyword">Keyword</label>
+  <input id="f-keyword" type="search" placeholder="filter…" style="width:200px" />
+
+  <label for="f-after">After</label>
+  <input id="f-after" type="datetime-local" />
+
+  <label for="f-before">Before</label>
+  <input id="f-before" type="datetime-local" />
+</div>
+
+<!--
+  Cursor tracking: a plain hidden input — no triggers, no polling.
+  Its value is the last-seen buffer offset.  Every /rows response
+  OOB-swaps this element to advance the cursor so the next poll
+  requests only entries beyond what was already received.
+
+  Polling control: a stable div with hx-trigger="every 2s".  It is
+  never replaced (no OOB on this element), so its setTimeout fires
+  cleanly on every tick.  hx-include reads #poll-cursor's name/value
+  and adds after=N to the query string automatically.
+-->
+<input type="hidden" id="poll-cursor" name="after" value="{{ total }}">
+<div id="row-poll"
+     hx-get="/rows"
+     hx-trigger="every 2s"
+     hx-target="#log-body"
+     hx-swap="beforeend"
+     hx-include="#poll-cursor"
+     style="display:none"></div>
+
+<!-- ---------------------------------------------------------------- -->
+<!-- Log stream table                                                  -->
+<!-- ---------------------------------------------------------------- -->
+<div id="log-table-wrap">
+  <table id="log-table">
+    <thead>
+      <tr>
+        <th class="ts">Timestamp</th>
+        <th>Level</th>
+        <th>Message</th>
+      </tr>
+    </thead>
+    <tbody id="log-body">
+      {% for entry in entries %}
+      <tr class="log-row"
+          data-level="{{ entry.level }}"
+          data-ts="{{ entry.timestamp }}"
+          data-msg="{{ entry.message | lower }}">
+        <td class="ts">{{ entry.timestamp }}</td>
+        <td class="level-cell level-{{ entry.level }}">{{ entry.level }}</td>
+        <td>{{ entry.message }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  'use strict';
+
+  // ---- Client-side filter (no server round-trip) ----
+  const tbody = document.getElementById('log-body');
+
+  function applyFilters() {
+    const level   = document.getElementById('f-level').value;
+    const keyword = document.getElementById('f-keyword').value.toLowerCase();
+    const after   = document.getElementById('f-after').value;
+    const before  = document.getElementById('f-before').value;
+
+    const afterMs  = after  ? new Date(after).getTime()  : 0;
+    const beforeMs = before ? new Date(before).getTime() : Infinity;
+
+    for (const row of tbody.querySelectorAll('.log-row')) {
+      let show = true;
+      if (level && row.dataset.level !== level) show = false;
+      if (keyword && !row.dataset.msg.includes(keyword)) show = false;
+      if (afterMs || beforeMs < Infinity) {
+        const rowMs = new Date(row.dataset.ts).getTime();
+        if (rowMs < afterMs || rowMs > beforeMs) show = false;
+      }
+      row.style.display = show ? '' : 'none';
+    }
+  }
+
+  ['f-level', 'f-keyword', 'f-after', 'f-before'].forEach(function (id) {
+    document.getElementById(id).addEventListener('input', applyFilters);
+  });
+
+  // ---- Re-apply filters + auto-scroll after each poll response ----
+  document.addEventListener('htmx:afterSwap', function (e) {
+    if (e.detail.target && e.detail.target.id === 'log-body') {
+      applyFilters();
+      const wrap = document.getElementById('log-table-wrap');
+      const nearBottom = wrap.scrollHeight - wrap.scrollTop - wrap.clientHeight < 80;
+      if (nearBottom) wrap.scrollTop = wrap.scrollHeight;
+    }
+  });
+
+})();
+</script>
+{% endblock %}
