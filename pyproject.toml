@@ -1,6 +1,6 @@
 [project]
 name = "devbrief"
-version = "0.3.0"
+version = "0.3.1"
 description = "Generate a human-readable brief for any GitHub repository using Claude AI"
 readme = "README.md"
 requires-python = ">=3.12"
