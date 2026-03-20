@@ -74,22 +74,28 @@ export ANTHROPIC_API_KEY=sk-ant-...
 ### devbrief repo
 
 ```bash
-devbrief repo <github-url> [--output FILE]
+devbrief repo <github-url> [--output FILE] [--no-cache]
 ```
+
+Briefs are cached locally in `~/.cache/devbrief/` and keyed by the repository's latest commit SHA. Subsequent calls on the same repo with no new commits return instantly with a `(cached — last updated Xh ago)` note.
 
 **Examples:**
 
 ```bash
-# Print the brief to the terminal
+# Print the brief to the terminal (served from cache if unchanged)
 devbrief repo https://github.com/anthropics/anthropic-sdk-python
 
 # Save the brief as a markdown file
 devbrief repo https://github.com/astral-sh/uv --output uv-brief.md
+
+# Force a fresh Claude call, bypassing the cache
+devbrief repo https://github.com/astral-sh/uv --no-cache
 ```
 
 | Option | Short | Description |
 |---|---|---|
 | `--output FILE` | `-o` | Save the brief as a markdown file |
+| `--no-cache`, `--refresh` | | Skip cache and force a fresh API call |
 | `--help` | | Show usage and exit |
 
 ### devbrief auth
@@ -160,12 +166,22 @@ Each generated brief contains:
 ```
 GitHub URL
     │
+    ├── /repos/:owner/:repo/commits?per_page=1  → latest commit SHA
+    │       │
+    │       └── Cache hit?  (~/.cache/devbrief/<sha256(url+sha)>.json)
+    │               ├── Yes → return cached brief + "(cached Xh ago)"
+    │               └── No  ↓
+    │
     ├── /repos/:owner/:repo        → name, description, stars, language, topics
     ├── /repos/:owner/:repo/readme → decoded README content (first 3000 chars)
     └── /repos/:owner/:repo/contents → top-level file tree
             │
             └── Structured prompt → Claude (model from config) → Rich terminal output
+                    │
+                    └── Write to cache
 ```
+
+If the GitHub API is unreachable, the most recent cached brief for that URL is served regardless of age.
 
 ---
 
@@ -222,13 +238,15 @@ src/devbrief/
 │       └── dashboard.html  # Log dashboard template
 ├── core/
 │   ├── credentials.py   # API key + model resolution chain
-│   └── config.py        # Config file read/write (~/.config/devbrief/config.toml)
+│   ├── config.py        # Config file read/write (~/.config/devbrief/config.toml)
+│   └── cache.py         # Local brief cache (~/.cache/devbrief/)
 ├── github.py            # GitHub REST API fetchers
 ├── brief.py             # Prompt construction and Claude API call
 └── display.py           # Rich terminal rendering
 tests/
 ├── test_credentials.py  # Credential resolution + auth command tests
 ├── test_logs.py         # Log parser, ring buffer, polling endpoints
+├── test_cache.py        # Cache module + repo cache integration tests
 ├── test_github.py
 └── test_display.py
 ```
