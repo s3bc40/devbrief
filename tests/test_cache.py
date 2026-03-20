@@ -1,16 +1,15 @@
 """Tests for the local file cache layer (devbrief repo --cache)."""
+
 import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
 from devbrief.core.cache import (
     cache_age_str,
-    cache_dir,
     cache_key,
-    cache_path,
     find_latest_cache_by_url,
     read_cache,
     write_cache,
@@ -45,9 +44,7 @@ def _make_entry(
 @pytest.fixture()
 def tmp_cache(tmp_path: Path, monkeypatch):
     """Redirect cache_dir() to a temp directory for isolation."""
-    monkeypatch.setattr(
-        "devbrief.core.cache.cache_dir", lambda: tmp_path / "devbrief"
-    )
+    monkeypatch.setattr("devbrief.core.cache.cache_dir", lambda: tmp_path / "devbrief")
     (tmp_path / "devbrief").mkdir()
     return tmp_path / "devbrief"
 
@@ -115,7 +112,10 @@ class TestReadWriteCache:
 
     def test_write_silently_ignores_os_error(self, tmp_cache, monkeypatch):
         """write_cache must not raise even if the filesystem is read-only."""
-        monkeypatch.setattr("builtins.open", lambda *a, **kw: (_ for _ in ()).throw(OSError("disk full")))
+        monkeypatch.setattr(
+            "builtins.open",
+            lambda *a, **kw: (_ for _ in ()).throw(OSError("disk full")),
+        )
         key = cache_key(REPO_URL, COMMIT_SHA)
         # Should not raise
         write_cache(key, REPO_URL, COMMIT_SHA, BRIEF_TEXT)
@@ -137,9 +137,9 @@ class TestFindLatestCacheByUrl:
         assert result["url"] == REPO_URL
 
     def test_returns_most_recent_entry(self, tmp_cache):
-        older_time = (
-            datetime.now(timezone.utc) - timedelta(hours=2)
-        ).isoformat(timespec="seconds")
+        older_time = (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat(
+            timespec="seconds"
+        )
         newer_time = datetime.now(timezone.utc).isoformat(timespec="seconds")
         _make_entry(tmp_cache, sha="sha-old", brief="old brief", cached_at=older_time)
         _make_entry(tmp_cache, sha="sha-new", brief="new brief", cached_at=newer_time)
@@ -159,11 +159,15 @@ class TestFindLatestCacheByUrl:
 
 class TestCacheAgeStr:
     def test_hours(self):
-        t = (datetime.now(timezone.utc) - timedelta(hours=3)).isoformat(timespec="seconds")
+        t = (datetime.now(timezone.utc) - timedelta(hours=3)).isoformat(
+            timespec="seconds"
+        )
         assert cache_age_str(t) == "3h ago"
 
     def test_minutes(self):
-        t = (datetime.now(timezone.utc) - timedelta(minutes=45)).isoformat(timespec="seconds")
+        t = (datetime.now(timezone.utc) - timedelta(minutes=45)).isoformat(
+            timespec="seconds"
+        )
         assert cache_age_str(t) == "45m ago"
 
     def test_just_now(self):
@@ -208,10 +212,16 @@ class TestRepoCacheIntegration:
 
         # GitHub API mocks
         commit_resp = _make_mock_response([{"sha": COMMIT_SHA}])
-        repo_resp = _make_mock_response({
-            "name": "repo", "description": "", "stargazers_count": 0,
-            "language": "Python", "topics": [], "homepage": "",
-        })
+        repo_resp = _make_mock_response(
+            {
+                "name": "repo",
+                "description": "",
+                "stargazers_count": 0,
+                "language": "Python",
+                "topics": [],
+                "homepage": "",
+            }
+        )
         readme_resp = _make_mock_response(
             {"content": base64.b64encode(b"# Readme").decode()}, 200
         )
@@ -241,7 +251,6 @@ class TestRepoCacheIntegration:
         assert any(tmp_cache.glob("*.json"))
 
     def test_cache_hit_same_sha_skips_api(self, mocker, tmp_path, mock_env):
-        import base64
         from typer.testing import CliRunner
         from devbrief.cli import app
 
@@ -251,14 +260,21 @@ class TestRepoCacheIntegration:
         # Pre-populate cache
         key = cache_key(REPO_URL, COMMIT_SHA)
         cached_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
-        entry = {"url": REPO_URL, "commit_sha": COMMIT_SHA, "brief": BRIEF_TEXT, "cached_at": cached_at}
+        entry = {
+            "url": REPO_URL,
+            "commit_sha": COMMIT_SHA,
+            "brief": BRIEF_TEXT,
+            "cached_at": cached_at,
+        }
         (tmp_cache / f"{key}.json").write_text(json.dumps(entry))
 
         mocker.patch("devbrief.core.cache.cache_dir", return_value=tmp_cache)
 
         # Only commit SHA fetch should happen — no repo/readme/tree/brief calls
         commit_resp = _make_mock_response([{"sha": COMMIT_SHA}])
-        get_mock = mocker.patch("devbrief.github.requests.get", return_value=commit_resp)
+        get_mock = mocker.patch(
+            "devbrief.github.requests.get", return_value=commit_resp
+        )
         brief_mock = mocker.patch("devbrief.commands.repo.generate_brief")
 
         runner = CliRunner()
@@ -279,17 +295,27 @@ class TestRepoCacheIntegration:
 
         # Cache entry with OLD sha
         old_key = cache_key(REPO_URL, "old-sha")
-        entry = {"url": REPO_URL, "commit_sha": "old-sha", "brief": "old brief",
-                 "cached_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+        entry = {
+            "url": REPO_URL,
+            "commit_sha": "old-sha",
+            "brief": "old brief",
+            "cached_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        }
         (tmp_cache / f"{old_key}.json").write_text(json.dumps(entry))
 
         mocker.patch("devbrief.core.cache.cache_dir", return_value=tmp_cache)
 
         commit_resp = _make_mock_response([{"sha": "new-sha"}])
-        repo_resp = _make_mock_response({
-            "name": "repo", "description": "", "stargazers_count": 0,
-            "language": "Python", "topics": [], "homepage": "",
-        })
+        repo_resp = _make_mock_response(
+            {
+                "name": "repo",
+                "description": "",
+                "stargazers_count": 0,
+                "language": "Python",
+                "topics": [],
+                "homepage": "",
+            }
+        )
         readme_resp = _make_mock_response(
             {"content": base64.b64encode(b"# Readme").decode()}, 200
         )
@@ -300,7 +326,9 @@ class TestRepoCacheIntegration:
             "devbrief.github.requests.get",
             side_effect=[commit_resp, repo_resp, readme_resp, tree_resp, commit_resp2],
         )
-        brief_mock = mocker.patch("devbrief.commands.repo.generate_brief", return_value="new brief")
+        brief_mock = mocker.patch(
+            "devbrief.commands.repo.generate_brief", return_value="new brief"
+        )
 
         runner = CliRunner()
         result = runner.invoke(app, ["repo", REPO_URL])
@@ -348,10 +376,16 @@ class TestRepoCacheIntegration:
 
         mocker.patch("devbrief.core.cache.cache_dir", return_value=tmp_cache)
 
-        repo_resp = _make_mock_response({
-            "name": "repo", "description": "", "stargazers_count": 0,
-            "language": "Python", "topics": [], "homepage": "",
-        })
+        repo_resp = _make_mock_response(
+            {
+                "name": "repo",
+                "description": "",
+                "stargazers_count": 0,
+                "language": "Python",
+                "topics": [],
+                "homepage": "",
+            }
+        )
         readme_resp = _make_mock_response(
             {"content": base64.b64encode(b"# Readme").decode()}, 200
         )
@@ -360,7 +394,9 @@ class TestRepoCacheIntegration:
             "devbrief.github.requests.get",
             side_effect=[repo_resp, readme_resp, tree_resp],
         )
-        brief_mock = mocker.patch("devbrief.commands.repo.generate_brief", return_value="fresh brief")
+        brief_mock = mocker.patch(
+            "devbrief.commands.repo.generate_brief", return_value="fresh brief"
+        )
 
         runner = CliRunner()
         result = runner.invoke(app, ["repo", REPO_URL, "--no-cache"])
@@ -380,10 +416,16 @@ class TestRepoCacheIntegration:
 
         mocker.patch("devbrief.core.cache.cache_dir", return_value=tmp_cache)
 
-        repo_resp = _make_mock_response({
-            "name": "repo", "description": "", "stargazers_count": 0,
-            "language": "Python", "topics": [], "homepage": "",
-        })
+        repo_resp = _make_mock_response(
+            {
+                "name": "repo",
+                "description": "",
+                "stargazers_count": 0,
+                "language": "Python",
+                "topics": [],
+                "homepage": "",
+            }
+        )
         readme_resp = _make_mock_response(
             {"content": base64.b64encode(b"# Readme").decode()}, 200
         )
@@ -392,7 +434,9 @@ class TestRepoCacheIntegration:
             "devbrief.github.requests.get",
             side_effect=[repo_resp, readme_resp, tree_resp],
         )
-        brief_mock = mocker.patch("devbrief.commands.repo.generate_brief", return_value="fresh brief")
+        brief_mock = mocker.patch(
+            "devbrief.commands.repo.generate_brief", return_value="fresh brief"
+        )
 
         runner = CliRunner()
         result = runner.invoke(app, ["repo", REPO_URL, "--refresh"])
