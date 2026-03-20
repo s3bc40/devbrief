@@ -64,10 +64,16 @@ devbrief/
 ├── pyproject.toml               # Project metadata, deps, build config (hatchling)
 ├── uv.lock                      # Locked dependency tree
 ├── README.md                    # PyPI-ready README
+├── assets/
+│   ├── devbrief-cache.gif       # Demo GIF embedded in README (excluded from wheel)
+│   └── vhs/
+│       └── devbrief-cache.tape  # VHS tape source used to record the demo GIF
 ├── LICENSE                      # MIT
 ├── CLAUDE.md                    # This file — agent persistent memory
 └── .gitignore
 ```
+
+**Assets policy:** `assets/` is excluded from the PyPI wheel via `[tool.hatch.build.targets.wheel] exclude`. GIFs and tapes are repo-only. To regenerate the GIF: `vhs assets/vhs/devbrief-cache.tape`.
 
 ---
 

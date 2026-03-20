@@ -7,6 +7,8 @@
 - **`devbrief repo`** — takes a GitHub URL, pulls repository metadata, README, and file tree, then asks Claude to produce a structured brief directly in your terminal.
 - **`devbrief logs`** — streams a log file (or stdin) into a local browser dashboard with live filtering, level highlighting, and rolling metrics.
 
+![devbrief repo cache demo](assets/devbrief-cache.gif)
+
 ---
 
 ## Installation
