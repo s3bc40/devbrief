@@ -68,7 +68,9 @@ def repo_command(
 
         if cached_entry:
             brief = cached_entry["brief"]
-            display_name = cached_entry.get("url", github_url).rstrip("/").split("/")[-1]
+            display_name = (
+                cached_entry.get("url", github_url).rstrip("/").split("/")[-1]
+            )
             show_brief(display_name, brief, 0.0)
             show_cached(cache_age_str(cached_entry["cached_at"]))
         else:
@@ -78,7 +80,9 @@ def repo_command(
 
             show_generating()
             start = time.monotonic()
-            brief = generate_brief(repo, readme, file_tree, api_key=api_key, model=model)
+            brief = generate_brief(
+                repo, readme, file_tree, api_key=api_key, model=model
+            )
             elapsed = time.monotonic() - start
             show_brief(repo["name"], brief, elapsed)
 

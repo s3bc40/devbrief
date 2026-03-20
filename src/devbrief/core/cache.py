@@ -57,7 +57,10 @@ def find_latest_cache_by_url(repo_url: str) -> dict | None:
             try:
                 with path.open(encoding="utf-8") as fh:
                     entry = json.load(fh)
-                if entry.get("url") == repo_url and entry.get("cached_at", "") > best_time:
+                if (
+                    entry.get("url") == repo_url
+                    and entry.get("cached_at", "") > best_time
+                ):
                     best = entry
                     best_time = entry["cached_at"]
             except (json.JSONDecodeError, OSError):
