@@ -37,12 +37,23 @@ devbrief/
 ├── src/
 │   └── devbrief/
 │       ├── __init__.py          # Package init
-│       ├── main.py              # CLI entry point (click → typer migration)
-│       ├── github.py            # GitHub API fetchers (fetch_repo_data, fetch_readme, fetch_file_tree)
+│       ├── cli.py               # Typer app — registers all subcommands
+│       ├── commands/
+│       │   ├── repo.py          # devbrief repo (cache-aware)
+│       │   ├── auth.py          # devbrief auth
+│       │   └── logs.py          # devbrief logs — FastAPI server, log parser, ring buffer
+│       ├── core/
+│       │   ├── credentials.py   # API key + model resolution chain
+│       │   ├── config.py        # Config file read/write (~/.config/devbrief/config.toml)
+│       │   └── cache.py         # Brief cache keyed by sha256(url+commit_sha) → ~/.cache/devbrief/
+│       ├── github.py            # GitHub REST API fetchers (+ fetch_latest_commit_sha)
 │       ├── brief.py             # Claude prompt builder and generate_brief()
 │       └── display.py           # Rich terminal display functions
 ├── tests/
 │   ├── __init__.py
+│   ├── test_cache.py            # Cache module + repo cache integration tests
+│   ├── test_credentials.py      # Credential resolution + auth command tests
+│   ├── test_logs.py             # Log parser, ring buffer, polling endpoints
 │   ├── test_github.py           # Unit tests for GitHub fetchers
 │   └── test_display.py          # Unit tests for Rich display functions
 ├── dist/                        # Built distributions (gitignored except .gitignore)
@@ -64,7 +75,7 @@ devbrief/
 
 | Subcommand      | Status      | Notes                                          |
 |-----------------|-------------|------------------------------------------------|
-| devbrief repo   | LIVE        | v0.2.0, Typer, credentials via resolve_api_key/resolve_model |
+| devbrief repo   | LIVE        | v0.3.1, cache layer (SHA-keyed, ~/.cache/devbrief/), --no-cache/--refresh |
 | devbrief auth   | LIVE        | v0.2.0, key validation, config write/read/clear, 600 perms   |
 | devbrief logs   | LIVE        | v0.3.0, FastAPI+HTMX polling dashboard, ring buffer, file (1s tail)/stdin |
 | devbrief env    | PLANNED     | Rust entry point via maturin/PyO3              |
@@ -133,4 +144,6 @@ devbrief/
 1. [x] Create CLAUDE.md
 2. [x] Set up CI/CD pipeline (`ci.yml` + `release.yml`) — Rust steps present as commented stubs
 3. [x] v0.2.0: CLI restructure (`devbrief repo`), `devbrief auth`, credential + model resolution
-4. [ ] Await spec card before touching any subcommand
+4. [x] v0.3.0: `devbrief logs` — FastAPI+HTMX polling dashboard, ring buffer, file/stdin
+5. [x] v0.3.1: `devbrief repo` cache layer — SHA-keyed local cache, --no-cache/--refresh flags
+6. [ ] Await spec card before touching any subcommand

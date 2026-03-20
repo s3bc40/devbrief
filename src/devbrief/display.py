@@ -26,5 +26,9 @@ def show_saved(path: str) -> None:
     console.print(f"[dim]Saved to[/dim] [bold]{path}[/bold]\n")
 
 
+def show_cached(age_str: str) -> None:
+    console.print(f"[dim](cached — last updated {age_str})[/dim]\n")
+
+
 def show_error(message: str) -> None:
     rprint(f"\n[bold red]Error:[/bold red] {message}\n")
