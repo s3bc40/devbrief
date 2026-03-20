@@ -47,3 +47,17 @@ def fetch_file_tree(owner: str, repo: str) -> list[str]:
     response.raise_for_status()
     items = response.json()
     return [item["name"] for item in items if isinstance(item, dict)]
+
+
+def fetch_latest_commit_sha(owner: str, repo: str) -> str | None:
+    """Return the SHA of the most recent commit, or None if unreachable."""
+    url = f"https://api.github.com/repos/{owner}/{repo}/commits?per_page=1"
+    try:
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()
+        commits = response.json()
+        if commits and isinstance(commits, list):
+            return commits[0].get("sha")
+    except Exception:
+        return None
+    return None
