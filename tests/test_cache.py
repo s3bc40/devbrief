@@ -272,9 +272,7 @@ class TestRepoCacheIntegration:
 
         # Only commit SHA fetch should happen — no repo/readme/tree/brief calls
         commit_resp = _make_mock_response([{"sha": COMMIT_SHA}])
-        get_mock = mocker.patch(
-            "devbrief.github.httpx.get", return_value=commit_resp
-        )
+        get_mock = mocker.patch("devbrief.github.httpx.get", return_value=commit_resp)
         brief_mock = mocker.patch("devbrief.commands.repo.generate_brief")
 
         runner = CliRunner()
