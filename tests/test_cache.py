@@ -228,7 +228,7 @@ class TestRepoCacheIntegration:
         tree_resp = _make_mock_response([{"name": "src"}], 200)
 
         get_mock = mocker.patch(
-            "devbrief.github.requests.get",
+            "devbrief.github.httpx.get",
             side_effect=[commit_resp, repo_resp, readme_resp, tree_resp],
         )
         brief_mock = mocker.patch(
@@ -272,9 +272,7 @@ class TestRepoCacheIntegration:
 
         # Only commit SHA fetch should happen — no repo/readme/tree/brief calls
         commit_resp = _make_mock_response([{"sha": COMMIT_SHA}])
-        get_mock = mocker.patch(
-            "devbrief.github.requests.get", return_value=commit_resp
-        )
+        get_mock = mocker.patch("devbrief.github.httpx.get", return_value=commit_resp)
         brief_mock = mocker.patch("devbrief.commands.repo.generate_brief")
 
         runner = CliRunner()
@@ -323,7 +321,7 @@ class TestRepoCacheIntegration:
         commit_resp2 = _make_mock_response([{"sha": "new-sha"}])
 
         mocker.patch(
-            "devbrief.github.requests.get",
+            "devbrief.github.httpx.get",
             side_effect=[commit_resp, repo_resp, readme_resp, tree_resp, commit_resp2],
         )
         brief_mock = mocker.patch(
@@ -337,7 +335,7 @@ class TestRepoCacheIntegration:
         brief_mock.assert_called_once()
 
     def test_github_api_unreachable_serves_cached(self, mocker, tmp_path, mock_env):
-        import requests as req_lib
+        import httpx
         from typer.testing import CliRunner
         from devbrief.cli import app
 
@@ -351,8 +349,8 @@ class TestRepoCacheIntegration:
 
         # Commit SHA fetch raises (network error)
         mocker.patch(
-            "devbrief.github.requests.get",
-            side_effect=req_lib.exceptions.ConnectionError("unreachable"),
+            "devbrief.github.httpx.get",
+            side_effect=httpx.ConnectError("unreachable"),
         )
         brief_mock = mocker.patch("devbrief.commands.repo.generate_brief")
 
@@ -391,7 +389,7 @@ class TestRepoCacheIntegration:
         )
         tree_resp = _make_mock_response([{"name": "src"}], 200)
         mocker.patch(
-            "devbrief.github.requests.get",
+            "devbrief.github.httpx.get",
             side_effect=[repo_resp, readme_resp, tree_resp],
         )
         brief_mock = mocker.patch(
@@ -431,7 +429,7 @@ class TestRepoCacheIntegration:
         )
         tree_resp = _make_mock_response([{"name": "src"}], 200)
         mocker.patch(
-            "devbrief.github.requests.get",
+            "devbrief.github.httpx.get",
             side_effect=[repo_resp, readme_resp, tree_resp],
         )
         brief_mock = mocker.patch(

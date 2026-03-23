@@ -1,4 +1,6 @@
-import requests
+import base64
+
+import httpx
 
 
 def parse_repo_url(url: str) -> tuple[str, str]:
@@ -12,7 +14,7 @@ def parse_repo_url(url: str) -> tuple[str, str]:
 def fetch_repo_data(owner: str, repo: str) -> dict:
     """Fetch repository metadata from GitHub API."""
     url = f"https://api.github.com/repos/{owner}/{repo}"
-    response = requests.get(url, timeout=10)
+    response = httpx.get(url, timeout=10)
     response.raise_for_status()
     data = response.json()
     return {
@@ -28,12 +30,10 @@ def fetch_repo_data(owner: str, repo: str) -> dict:
 def fetch_readme(owner: str, repo: str) -> str:
     """Fetch README content from GitHub API (decoded from base64)."""
     url = f"https://api.github.com/repos/{owner}/{repo}/readme"
-    response = requests.get(url, timeout=10)
+    response = httpx.get(url, timeout=10)
     if response.status_code == 404:
         return ""
     response.raise_for_status()
-    import base64
-
     content = response.json().get("content", "")
     return base64.b64decode(content).decode("utf-8", errors="replace")
 
@@ -41,7 +41,7 @@ def fetch_readme(owner: str, repo: str) -> str:
 def fetch_file_tree(owner: str, repo: str) -> list[str]:
     """Fetch top-level file/directory names from GitHub API."""
     url = f"https://api.github.com/repos/{owner}/{repo}/contents"
-    response = requests.get(url, timeout=10)
+    response = httpx.get(url, timeout=10)
     if response.status_code == 404:
         return []
     response.raise_for_status()
@@ -53,7 +53,7 @@ def fetch_latest_commit_sha(owner: str, repo: str) -> str | None:
     """Return the SHA of the most recent commit, or None if unreachable."""
     url = f"https://api.github.com/repos/{owner}/{repo}/commits?per_page=1"
     try:
-        response = requests.get(url, timeout=5)
+        response = httpx.get(url, timeout=5)
         response.raise_for_status()
         commits = response.json()
         if commits and isinstance(commits, list):

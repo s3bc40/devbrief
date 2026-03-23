@@ -46,7 +46,7 @@ class TestFetchRepoData:
             "topics": ["cli", "ai"],
             "homepage": "https://example.com",
         }
-        mocker.patch("devbrief.github.requests.get", return_value=mock_response)
+        mocker.patch("devbrief.github.httpx.get", return_value=mock_response)
 
         result = fetch_repo_data("owner", "my-repo")
 
@@ -62,7 +62,7 @@ class TestFetchRepoData:
     def test_missing_fields_use_defaults(self, mocker):
         mock_response = MagicMock()
         mock_response.json.return_value = {}
-        mocker.patch("devbrief.github.requests.get", return_value=mock_response)
+        mocker.patch("devbrief.github.httpx.get", return_value=mock_response)
 
         result = fetch_repo_data("owner", "repo")
 
@@ -82,14 +82,14 @@ class TestFetchReadme:
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {"content": encoded}
-        mocker.patch("devbrief.github.requests.get", return_value=mock_response)
+        mocker.patch("devbrief.github.httpx.get", return_value=mock_response)
 
         assert fetch_readme("owner", "repo") == "# Hello World\n"
 
     def test_returns_empty_string_on_404(self, mocker):
         mock_response = MagicMock()
         mock_response.status_code = 404
-        mocker.patch("devbrief.github.requests.get", return_value=mock_response)
+        mocker.patch("devbrief.github.httpx.get", return_value=mock_response)
 
         assert fetch_readme("owner", "repo") == ""
 
@@ -98,7 +98,7 @@ class TestFetchReadme:
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {"content": encoded}
-        mocker.patch("devbrief.github.requests.get", return_value=mock_response)
+        mocker.patch("devbrief.github.httpx.get", return_value=mock_response)
 
         assert fetch_readme("owner", "repo") == ""
 
@@ -117,7 +117,7 @@ class TestFetchFileTree:
             {"name": "README.md", "type": "file"},
             {"name": "pyproject.toml", "type": "file"},
         ]
-        mocker.patch("devbrief.github.requests.get", return_value=mock_response)
+        mocker.patch("devbrief.github.httpx.get", return_value=mock_response)
 
         assert fetch_file_tree("owner", "repo") == [
             "src",
@@ -128,7 +128,7 @@ class TestFetchFileTree:
     def test_returns_empty_list_on_404(self, mocker):
         mock_response = MagicMock()
         mock_response.status_code = 404
-        mocker.patch("devbrief.github.requests.get", return_value=mock_response)
+        mocker.patch("devbrief.github.httpx.get", return_value=mock_response)
 
         assert fetch_file_tree("owner", "repo") == []
 
@@ -136,6 +136,6 @@ class TestFetchFileTree:
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = [{"name": "src"}, "unexpected-string"]
-        mocker.patch("devbrief.github.requests.get", return_value=mock_response)
+        mocker.patch("devbrief.github.httpx.get", return_value=mock_response)
 
         assert fetch_file_tree("owner", "repo") == ["src"]

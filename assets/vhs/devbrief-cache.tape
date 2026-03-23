@@ -2,7 +2,7 @@
 # Pattern: Hide + Sleep to mask API wait time
 # Requires: rm -rf ~/.cache/devbrief/ before running
 
-Output devbrief-cache.gif
+Output ../devbrief-cache.gif
 
 Set FontSize 16
 Set Width 1200
@@ -13,8 +13,9 @@ Set Padding 20
 Set CursorBlink false
 Set TypingSpeed 40ms
 Set WindowBar Colorful
+Set PlaybackSpeed 1.5
 
-# ── Setup: clear cache ──────────────────────────────────────
+# ── Setup: vider le cache ──────────────────────────
 Hide
 Type "rm -rf ~/.cache/devbrief/"
 Enter
@@ -23,16 +24,16 @@ Type "clear"
 Enter
 Show
 
-# ── Scene 1: cold run (cache miss) ─────────────────────────
+# ── Scene 1: cold run (cache miss) ─────────────────
 Type "devbrief repo https://github.com/fastapi/typer"
 Sleep 400ms
 Enter
 Hide
 Sleep 25s
 Show
-Sleep 2500ms
+Sleep 1500ms
 
-# ── Scene 2: cache hit ──────────────────────────────────────
+# ── Scene 2: cache hit ─────────────────────────────
 Hide
 Type "clear"
 Enter
@@ -44,9 +45,9 @@ Enter
 Hide
 Sleep 2s
 Show
-Sleep 2500ms
+Sleep 1500ms
 
-# ── Scene 3: --refresh then cache hit ───────────────────────
+# ── Scene 3: --refresh puis hit ────────────────────
 Hide
 Type "clear"
 Enter
@@ -58,7 +59,7 @@ Enter
 Hide
 Sleep 25s
 Show
-Sleep 800ms
+Sleep 500ms
 
 Type "devbrief repo https://github.com/fastapi/typer"
 Sleep 300ms
@@ -66,4 +67,4 @@ Enter
 Hide
 Sleep 2s
 Show
-Sleep 2500ms
+Sleep 1500ms

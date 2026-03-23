@@ -81,7 +81,7 @@ devbrief/
 
 | Subcommand      | Status      | Notes                                          |
 |-----------------|-------------|------------------------------------------------|
-| devbrief repo   | LIVE        | v0.3.1, cache layer (SHA-keyed, ~/.cache/devbrief/), --no-cache/--refresh |
+| devbrief repo   | LIVE        | v0.3.2, cache layer (SHA-keyed, ~/.cache/devbrief/), --no-cache/--refresh |
 | devbrief auth   | LIVE        | v0.2.0, key validation, config write/read/clear, 600 perms   |
 | devbrief logs   | LIVE        | v0.3.0, FastAPI+HTMX polling dashboard, ring buffer, file (1s tail)/stdin |
 | devbrief env    | PLANNED     | Rust entry point via maturin/PyO3              |
@@ -152,4 +152,5 @@ devbrief/
 3. [x] v0.2.0: CLI restructure (`devbrief repo`), `devbrief auth`, credential + model resolution
 4. [x] v0.3.0: `devbrief logs` — FastAPI+HTMX polling dashboard, ring buffer, file/stdin
 5. [x] v0.3.1: `devbrief repo` cache layer — SHA-keyed local cache, --no-cache/--refresh flags
-6. [ ] Await spec card before touching any subcommand
+6. [x] v0.3.2: `github.py` migrated from `requests` to `httpx` — closes HTTP client tech debt
+7. [ ] Await spec card before touching any subcommand
