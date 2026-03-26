@@ -61,19 +61,21 @@ devbrief/
 │   └── workflows/
 │       ├── ci.yml               # CI: lint + test on every PR and push to main
 │       └── release.yml          # Release: build + publish to PyPI on git tag v*
-├── pyproject.toml               # Project metadata, deps, build config (hatchling)
+├── pyproject.toml               # Project metadata, deps, build config (maturin)
 ├── uv.lock                      # Locked dependency tree
 ├── README.md                    # PyPI-ready README
 ├── assets/
-│   ├── devbrief-cache.gif       # Demo GIF embedded in README (excluded from wheel)
+│   ├── devbrief-cache.gif       # Demo GIF for devbrief repo (excluded from wheel)
+│   ├── devbrief-env.gif         # Demo GIF for devbrief env (excluded from wheel)
 │   └── vhs/
-│       └── devbrief-cache.tape  # VHS tape source used to record the demo GIF
+│       ├── devbrief-cache.tape  # VHS tape source for devbrief-cache.gif
+│       └── devbrief-env.tape    # VHS tape source for devbrief-env.gif
 ├── LICENSE                      # MIT
 ├── CLAUDE.md                    # This file — agent persistent memory
 └── .gitignore
 ```
 
-**Assets policy:** `assets/` is excluded from the PyPI wheel via `[tool.hatch.build.targets.wheel] exclude`. GIFs and tapes are repo-only. To regenerate the GIF: `vhs assets/vhs/devbrief-cache.tape`.
+**Assets policy:** `assets/` is excluded from the PyPI wheel via `[tool.maturin] exclude`. GIFs and tapes are repo-only. To regenerate: `vhs assets/vhs/devbrief-cache.tape` or `vhs assets/vhs/devbrief-env.tape`.
 
 ---
 
@@ -84,7 +86,7 @@ devbrief/
 | devbrief repo   | LIVE        | v0.3.2, cache layer (SHA-keyed, ~/.cache/devbrief/), --no-cache/--refresh |
 | devbrief auth   | LIVE        | v0.2.0, key validation, config write/read/clear, 600 perms   |
 | devbrief logs   | LIVE        | v0.3.0, FastAPI+HTMX polling dashboard, ring buffer, file (1s tail)/stdin |
-| devbrief env    | IN PROGRESS | v0.4.0, Rust active (maturin/PyO3), gitignore audit + .env drift + secret scan |
+| devbrief env    | LIVE        | v0.4.2, Rust active (maturin/PyO3), gitignore audit + .env drift + secret scan |
 | devbrief api    | PLANNED     |                                                |
 | devbrief infra  | PLANNED     |                                                |
 | devbrief pr     | PLANNED     |                                                |
@@ -114,7 +116,7 @@ devbrief/
 ## 6. CI/CD Rules
 
 - **`ci.yml`**: Runs on every PR and push to `main`. Steps: lint (ruff), type-check, test (pytest).
-- **`release.yml`**: Runs on git tag push matching `v*`. Steps: build wheel + sdist, publish to PyPI via trusted publishing (OIDC).
+- **`release.yml`**: Runs on git tag push matching `v*`. Steps: build wheels only (no sdist — Rust extension requires Rust to build from source), publish to PyPI via trusted publishing (OIDC).
 - **Branch strategy:** `main` is protected. Feature branches: `feat/<subcommand-name>` or `feat/<short-description>`.
 - **Conventional commits:** `feat:`, `fix:`, `chore:`, `docs:`, `test:`, `refactor:`
 - **Versioning:** semver. Python and Rust share the same version number. Update `pyproject.toml` version and tag simultaneously.

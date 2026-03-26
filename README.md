@@ -62,6 +62,7 @@ export ANTHROPIC_API_KEY=sk-ant-...
  Project situational awareness.
 
 ╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ -v, --version                 Show version and exit.                         │
 │ --install-completion          Install completion for the current shell.      │
 │ --show-completion             Show completion for the current shell, to copy │
 │                               it or customize the installation.              │
@@ -142,6 +143,8 @@ devbrief logs /var/log/app.log --port 8080
 The dashboard auto-detects common log formats (JSON structured logs, ISO timestamp prefix, `[LEVEL]`, `LEVEL:`) and supports live client-side filtering by level, keyword, and time range. New lines appended to the file appear within ~3 seconds.
 
 ### devbrief env
+
+![devbrief env demo](assets/devbrief-env.gif)
 
 ```bash
 devbrief env [PATH] [--strict] [--quiet]
