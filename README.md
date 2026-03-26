@@ -6,6 +6,7 @@
 
 - **`devbrief repo`** — takes a GitHub URL, pulls repository metadata, README, and file tree, then asks Claude to produce a structured brief directly in your terminal.
 - **`devbrief logs`** — streams a log file (or stdin) into a local browser dashboard with live filtering, level highlighting, and rolling metrics.
+- **`devbrief env`** — audits a project directory for environment hygiene: `.gitignore` coverage, `.env` / `.env.example` key drift, and secret pattern detection in committed files.
 
 ![devbrief repo cache demo](assets/devbrief-cache.gif)
 
@@ -70,6 +71,7 @@ export ANTHROPIC_API_KEY=sk-ant-...
 │ repo  Analyze a GitHub repository.                                           │
 │ auth  Manage API credentials.                                                │
 │ logs  Stream logs into a live dashboard.                                     │
+│ env   Check project environment health.                                      │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ```
 
@@ -139,6 +141,43 @@ devbrief logs /var/log/app.log --port 8080
 
 The dashboard auto-detects common log formats (JSON structured logs, ISO timestamp prefix, `[LEVEL]`, `LEVEL:`) and supports live client-side filtering by level, keyword, and time range. New lines appended to the file appear within ~3 seconds.
 
+### devbrief env
+
+```bash
+devbrief env [PATH] [--strict] [--quiet]
+```
+
+Audits a project directory for common environment-hygiene issues. Three checks run in sequence:
+
+1. **.gitignore audit** — verifies the file exists and warns on each missing advisory entry (`.env`, `.env.local`, `.env.*.local`, `*.pem`, `*.key`, `id_rsa`, `id_rsa.*`, `.aws/credentials`).
+2. **.env drift** — compares keys between `.env` and `.env.example`; warns on keys missing from `.env` or undocumented in `.env.example`.
+3. **Secret scan** — walks the directory tree (respecting `.gitignore`) and flags lines matching five patterns: Anthropic API keys, OpenAI API keys, AWS access key IDs, GitHub tokens, and PEM private key headers. Implemented as a compiled Rust extension for near-native performance on large trees.
+
+**Examples:**
+
+```bash
+# Audit the current directory
+devbrief env
+
+# Audit a specific project root
+devbrief env /path/to/project
+
+# Exit code 1 on any warning (CI-friendly strict mode)
+devbrief env --strict
+
+# Plain text output (no Rich formatting, useful for scripts)
+devbrief env --quiet
+```
+
+| Option | Description |
+|---|---|
+| `PATH` | Project root to scan (default: current directory) |
+| `--strict` | Treat warnings as errors — exit 1 if any warnings present |
+| `--quiet` | Suppress Rich formatting; plain text output only |
+| `--help` | Show usage and exit |
+
+Exit code `0` when all checks pass (or warnings only without `--strict`). Exit code `1` on any error, or any warning under `--strict`.
+
 ---
 
 ## Credential resolution order
@@ -198,24 +237,30 @@ If the GitHub API is unreachable, the most recent cached brief for that URL is s
 
 ## Development
 
-Requires [uv](https://docs.astral.sh/uv/).
+Requires [uv](https://docs.astral.sh/uv/) and [Rust](https://rustup.rs/) (stable toolchain).
 
 ```bash
 git clone https://github.com/s3bc40/devbrief
 cd devbrief
 uv sync --all-groups
+uv run maturin develop   # compile the Rust extension
 ```
 
 ### Run locally
 
 ```bash
 uv run devbrief repo https://github.com/s3bc40/devbrief
+uv run devbrief env .
 ```
 
 ### Run tests
 
 ```bash
+# Python test suite (122 tests)
 uv run pytest
+
+# Rust unit tests (12 tests)
+PYO3_BUILD_EXTENSION_MODULE=1 cargo test --manifest-path rust/Cargo.toml
 ```
 
 ### Lint
@@ -229,28 +274,36 @@ uv run ruff format src/ tests/
 
 ```
 src/devbrief/
-├── cli.py               # Typer app — registers all subcommands
+├── cli.py                   # Typer app — registers all subcommands
+├── _devbrief_core.pyi       # Type stubs for the Rust extension
+├── py.typed                 # PEP 561 marker
 ├── commands/
-│   ├── repo.py          # devbrief repo
-│   ├── auth.py          # devbrief auth
-│   └── logs.py          # devbrief logs — FastAPI server, log parser, ring buffer
+│   ├── repo.py              # devbrief repo
+│   ├── auth.py              # devbrief auth
+│   ├── logs.py              # devbrief logs — FastAPI server, log parser, ring buffer
+│   └── env.py               # devbrief env — gitignore audit, .env drift, secret scan
 ├── templates/
-│   ├── base.html        # Base HTML layout (HTMX)
+│   ├── base.html            # Base HTML layout (HTMX)
 │   └── logs/
-│       └── dashboard.html  # Log dashboard template
+│       └── dashboard.html   # Log dashboard template
 ├── core/
-│   ├── credentials.py   # API key + model resolution chain
-│   ├── config.py        # Config file read/write (~/.config/devbrief/config.toml)
-│   └── cache.py         # Local brief cache (~/.cache/devbrief/)
-├── github.py            # GitHub REST API fetchers
-├── brief.py             # Prompt construction and Claude API call
-└── display.py           # Rich terminal rendering
+│   ├── credentials.py       # API key + model resolution chain
+│   ├── config.py            # Config file read/write (~/.config/devbrief/config.toml)
+│   └── cache.py             # Local brief cache (~/.cache/devbrief/)
+├── github.py                # GitHub REST API fetchers
+├── brief.py                 # Prompt construction and Claude API call
+└── display.py               # Rich terminal rendering
+rust/
+├── Cargo.toml               # Rust crate (cdylib + rlib)
+└── src/lib.rs               # PyO3 extension: diff_env_files, scan_secrets
 tests/
-├── test_credentials.py  # Credential resolution + auth command tests
-├── test_logs.py         # Log parser, ring buffer, polling endpoints
-├── test_cache.py        # Cache module + repo cache integration tests
-├── test_github.py
-└── test_display.py
+├── test_credentials.py      # Credential resolution + auth command tests
+├── test_logs.py             # Log parser, ring buffer, polling endpoints
+├── test_cache.py            # Cache module + repo cache integration tests
+├── test_github.py           # GitHub fetcher tests
+├── test_display.py          # Rich display tests
+├── test_env.py              # env command tests (Python orchestration layer)
+└── MANUAL_QA.md             # Manual QA scenarios for devbrief env v0.4.0
 ```
 
 ---
