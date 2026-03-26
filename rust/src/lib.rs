@@ -51,7 +51,7 @@ pub(crate) fn diff_env_files_impl(env_path: &str, example_path: &str) -> EnvDiff
             return EnvDiff {
                 missing_from_env: vec![],
                 undocumented_in_example: vec![],
-            }
+            };
         }
     };
     let example_keys = match fs::read_to_string(example_path) {
@@ -60,7 +60,7 @@ pub(crate) fn diff_env_files_impl(env_path: &str, example_path: &str) -> EnvDiff
             return EnvDiff {
                 missing_from_env: vec![],
                 undocumented_in_example: vec![],
-            }
+            };
         }
     };
 
@@ -257,7 +257,11 @@ mod tests {
 
         let result = diff_env_files_impl(env.to_str().unwrap(), example.to_str().unwrap());
 
-        assert!(result.undocumented_in_example.contains(&"SECRET_VAR".to_string()));
+        assert!(
+            result
+                .undocumented_in_example
+                .contains(&"SECRET_VAR".to_string())
+        );
         assert!(result.missing_from_env.is_empty());
     }
 
