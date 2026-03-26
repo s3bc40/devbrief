@@ -10,81 +10,104 @@ permissions:
   id-token: write  # Required for PyPI trusted publishing (OIDC)
 
 jobs:
-  build:
-    name: Build distributions
+  linux:
+    name: Build wheels (Linux)
     runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
         with:
-          version: "latest"
+          command: build
+          args: --release --out dist --interpreter python${{ matrix.python-version }}
+          manylinux: auto
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install build dependencies
-        run: uv sync --all-groups
-
-      - name: Build wheel and sdist
-        run: uv build
-
-      - name: Upload distributions
+      - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
-          name: dist
+          name: wheels-linux-${{ matrix.python-version }}
+          path: dist/
+
+  macos:
+    name: Build wheels (macOS)
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          command: build
+          args: --release --out dist --interpreter python${{ matrix.python-version }}
+          target: universal2-apple-darwin
+
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-macos-${{ matrix.python-version }}
+          path: dist/
+
+  windows:
+    name: Build wheels (Windows)
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          command: build
+          args: --release --out dist --interpreter python${{ matrix.python-version }}
+
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-windows-${{ matrix.python-version }}
+          path: dist/
+
+  sdist:
+    name: Build source distribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build sdist
+        uses: PyO3/maturin-action@v1
+        with:
+          command: sdist
+          args: --out dist
+
+      - name: Upload sdist
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-sdist
           path: dist/
 
   publish-pypi:
     name: Publish to PyPI
-    needs: build
+    needs: [linux, macos, windows, sdist]
     runs-on: ubuntu-latest
     environment: pypi  # Requires a "pypi" environment configured in repo settings
 
     steps:
-      - name: Download distributions
+      - name: Download all wheels
         uses: actions/download-artifact@v4
         with:
-          name: dist
+          pattern: wheels-*
           path: dist/
+          merge-multiple: true
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         # Uses OIDC trusted publishing — no API token needed.
         # Configure at: https://pypi.org/manage/project/devbrief/settings/publishing/
-
-  # ── Rust stubs (uncomment when devbrief-core crate is added) ──────────────
-  # publish-crates:
-  #   name: Publish to crates.io
-  #   needs: build
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - name: Install Rust toolchain
-  #       uses: dtolnay/rust-toolchain@stable
-  #     - name: Publish crate
-  #       run: cargo publish
-  #       env:
-  #         CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-  #
-  # build-maturin:
-  #   name: Build maturin wheels (PyO3)
-  #   needs: []
-  #   runs-on: ${{ matrix.os }}
-  #   strategy:
-  #     matrix:
-  #       os: [ubuntu-latest, macos-latest, windows-latest]
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: PyO3/maturin-action@v1
-  #       with:
-  #         command: build
-  #         args: --release --out dist
-  #     - uses: actions/upload-artifact@v4
-  #       with:
-  #         name: maturin-wheels-${{ matrix.os }}
-  #         path: dist/
