@@ -38,7 +38,7 @@ pub(crate) fn parse_env_keys(content: &str) -> HashSet<String> {
         .lines()
         .map(|l| l.trim())
         .filter(|l| !l.is_empty() && !l.starts_with('#'))
-        .filter_map(|l| l.splitn(2, '=').next())
+        .filter_map(|l| l.split('=').next())
         .map(|k| k.trim().to_string())
         .filter(|k| !k.is_empty())
         .collect()
@@ -123,7 +123,7 @@ pub(crate) fn scan_secrets_impl(path: &str) -> Vec<SecretMatch> {
         }
 
         // Skip binary files: check first 512 bytes for null bytes
-        if buf[..buf.len().min(512)].iter().any(|&b| b == 0) {
+        if buf[..buf.len().min(512)].contains(&0) {
             continue;
         }
 
