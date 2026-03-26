@@ -84,7 +84,7 @@ devbrief/
 | devbrief repo   | LIVE        | v0.3.2, cache layer (SHA-keyed, ~/.cache/devbrief/), --no-cache/--refresh |
 | devbrief auth   | LIVE        | v0.2.0, key validation, config write/read/clear, 600 perms   |
 | devbrief logs   | LIVE        | v0.3.0, FastAPI+HTMX polling dashboard, ring buffer, file (1s tail)/stdin |
-| devbrief env    | PLANNED     | Rust entry point via maturin/PyO3              |
+| devbrief env    | IN PROGRESS | v0.4.0, Rust active (maturin/PyO3), gitignore audit + .env drift + secret scan |
 | devbrief api    | PLANNED     |                                                |
 | devbrief infra  | PLANNED     |                                                |
 | devbrief pr     | PLANNED     |                                                |
@@ -128,6 +128,12 @@ devbrief/
 - **Ruff** for linting and formatting — no other linters, no black, no flake8.
 - **Type hints everywhere** — no untyped functions, no `Any` without explanation.
 - **Rust:** `clippy` clean, zero warnings allowed.
+- **Rust testing:** `cargo test` requires two things: `crate-type = ["cdylib", "rlib"]` (rlib lets
+  the linker produce a test binary) and `PYO3_BUILD_EXTENSION_MODULE=1` (tells PyO3 not to link
+  against libpython, which may not be available as a shared lib on the host). Our tests only call
+  pure Rust functions so they do not need a live Python interpreter. Run as:
+  `PYO3_BUILD_EXTENSION_MODULE=1 cargo test --manifest-path rust/Cargo.toml`.
+  The `rust-check` CI job sets this env var automatically.
 - **Tests required** for every new command and every credential resolution path.
 - **Default model:** `claude-sonnet-4-6`. Never hardcode a model string in any command file. Model is always resolved via `resolve_model()` in `devbrief.core.credentials` (env var `DEVBRIEF_MODEL` → `config.toml [anthropic] default_model` → `"claude-sonnet-4-6"`).
 - **Graceful degradation:** If Rust extension is unavailable, fall back to Python implementation. Never hard-crash on missing native extension.
@@ -153,4 +159,7 @@ devbrief/
 4. [x] v0.3.0: `devbrief logs` — FastAPI+HTMX polling dashboard, ring buffer, file/stdin
 5. [x] v0.3.1: `devbrief repo` cache layer — SHA-keyed local cache, --no-cache/--refresh flags
 6. [x] v0.3.2: `github.py` migrated from `requests` to `httpx` — closes HTTP client tech debt
-7. [ ] Await spec card before touching any subcommand
+7. [x] v0.4.0: `devbrief env` — gitignore audit, .env drift (Rust), secret scan (Rust), stub types
+8. [x] Rust unit tests: `["cdylib","rlib"]`, `tempfile` dev-dep, 12 `#[cfg(test)]` tests,
+       `rust-check` CI job active, `PYO3_BUILD_EXTENSION_MODULE=1` for cargo test
+9. [ ] Await spec card before touching any subcommand
