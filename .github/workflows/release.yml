@@ -74,27 +74,9 @@ jobs:
           name: wheels-windows-${{ matrix.python-version }}
           path: dist/
 
-  sdist:
-    name: Build source distribution
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build sdist
-        uses: PyO3/maturin-action@v1
-        with:
-          command: sdist
-          args: --out dist
-
-      - name: Upload sdist
-        uses: actions/upload-artifact@v4
-        with:
-          name: wheels-sdist
-          path: dist/
-
   publish-pypi:
     name: Publish to PyPI
-    needs: [linux, macos, windows, sdist]
+    needs: [linux, macos, windows]
     runs-on: ubuntu-latest
     environment: pypi  # Requires a "pypi" environment configured in repo settings
 
