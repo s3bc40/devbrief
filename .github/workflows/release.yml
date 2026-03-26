@@ -34,11 +34,10 @@ jobs:
 
   macos:
     name: Build wheels (macOS)
+    runs-on: macos-latest
     strategy:
       matrix:
         python-version: ["3.12", "3.13"]
-        runner: [macos-latest, macos-13]
-    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
 
@@ -51,7 +50,7 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
-          name: wheels-macos-${{ matrix.runner }}-${{ matrix.python-version }}
+          name: wheels-macos-${{ matrix.python-version }}
           path: dist/
 
   windows:
