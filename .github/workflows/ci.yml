@@ -31,6 +31,12 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-groups
 
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build Rust extension
+        run: uv run maturin develop
+
       - name: Lint with ruff
         run: uv run ruff check src/ tests/
 
@@ -40,17 +46,23 @@ jobs:
       - name: Run tests
         run: uv run pytest tests/ -v
 
-  # ── Rust stubs (uncomment when devbrief-core crate is added) ──────────────
-  # rust-check:
-  #   name: Rust clippy & test
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - name: Install Rust toolchain
-  #       uses: dtolnay/rust-toolchain@stable
-  #       with:
-  #         components: clippy
-  #     - name: Clippy
-  #       run: cargo clippy --all-targets --all-features -- -D warnings
-  #     - name: Rust tests
-  #       run: cargo test
+  rust-check:
+    name: Rust clippy & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Clippy
+        run: cargo clippy --manifest-path rust/Cargo.toml -- -D warnings
+        env:
+          PYO3_BUILD_EXTENSION_MODULE: "1"
+
+      - name: Rust unit tests
+        run: cargo test --manifest-path rust/Cargo.toml
+        env:
+          PYO3_BUILD_EXTENSION_MODULE: "1"
