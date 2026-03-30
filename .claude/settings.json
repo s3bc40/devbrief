@@ -1,0 +1,16 @@
+{
+  "$schema": "https://claude.ai/claude-code/settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(uv:*)",
+      "Bash(cargo:*)",
+      "Bash(maturin:*)",
+      "Bash(pytest:*)",
+      "Bash(ruff:*)",
+      "Bash(git:*)",
+      "Bash(gh:*)",
+      "Bash(python3 -m json.tool *)"
+    ],
+    "deny": []
+  }
+}
