@@ -1,167 +1,78 @@
-# CLAUDE.md — DevBrief Agent Memory
+# CLAUDE.md — DevBrief
 
-## 1. Project Identity
+## Project
 
-DevBrief is a developer CLI tool for **project situational awareness**: given a GitHub repository URL (and later: log streams, API endpoints, infra configs, and PRs), it fetches structured data and generates a human-readable brief via Claude AI. The tool is designed for developers who need rapid context on any project without reading every file manually.
+DevBrief: developer CLI for **project situational awareness** — fetches structured data from a GitHub repo and generates a human-readable brief via Claude AI.
 
-**Tagline:** Project situational awareness
 **Distribution:** PyPI (`devbrief`) + crates.io (`devbrief-core`)
+**Stack:** Python (uv) + Rust (maturin/PyO3). No React, no Docker, no webpack.
 
 ---
 
-## 2. Tech Stack
+## Commands
 
-**Python layer:**
-- `typer` — CLI framework (migration target from current `click`)
-- `fastapi` + `jinja2` + HTMX — web UI for future `devbrief serve`
-- SSE (Server-Sent Events) — streaming output in web UI
-- `httpx` (async) — HTTP client (migration target from current `requests`)
-- `boto3` — AWS integration for `devbrief logs`
-- `anthropic` SDK — Claude AI integration
-- `tomllib` (stdlib, Python 3.11+) — config file parsing
-- `uv` — package manager and virtual env
-
-**Rust layer:**
-- `maturin` + `PyO3` — Rust extensions callable from Python
-- Enters via `devbrief env` subcommand
-- Published as `devbrief-core` on crates.io
-
-**Not used:** React, Node, webpack, Docker (end users install via pip/cargo only)
+| Task | Command |
+|------|---------|
+| Install deps | `uv sync` |
+| Run tests | `uv run pytest` |
+| Lint | `uv run ruff check src/ tests/` |
+| Format | `uv run ruff format src/ tests/` |
+| Type check | `uv run mypy src/` |
+| Rust tests | `PYO3_BUILD_EXTENSION_MODULE=1 cargo test --manifest-path rust/Cargo.toml` |
+| Build wheel | `maturin develop` |
 
 ---
 
-## 3. Project Structure
+## Architecture — Do Not Change Without a Spec Card
 
-```
-devbrief/
-├── src/
-│   └── devbrief/
-│       ├── __init__.py          # Package init
-│       ├── cli.py               # Typer app — registers all subcommands
-│       ├── commands/
-│       │   ├── repo.py          # devbrief repo (cache-aware)
-│       │   ├── auth.py          # devbrief auth
-│       │   └── logs.py          # devbrief logs — FastAPI server, log parser, ring buffer
-│       ├── core/
-│       │   ├── credentials.py   # API key + model resolution chain
-│       │   ├── config.py        # Config file read/write (~/.config/devbrief/config.toml)
-│       │   └── cache.py         # Brief cache keyed by sha256(url+commit_sha) → ~/.cache/devbrief/
-│       ├── github.py            # GitHub REST API fetchers (+ fetch_latest_commit_sha)
-│       ├── brief.py             # Claude prompt builder and generate_brief()
-│       └── display.py           # Rich terminal display functions
-├── tests/
-│   ├── __init__.py
-│   ├── test_cache.py            # Cache module + repo cache integration tests
-│   ├── test_credentials.py      # Credential resolution + auth command tests
-│   ├── test_logs.py             # Log parser, ring buffer, polling endpoints
-│   ├── test_github.py           # Unit tests for GitHub fetchers
-│   └── test_display.py          # Unit tests for Rich display functions
-├── dist/                        # Built distributions (gitignored except .gitignore)
-├── .github/
-│   └── workflows/
-│       ├── ci.yml               # CI: lint + test on every PR and push to main
-│       └── release.yml          # Release: build + publish to PyPI on git tag v*
-├── pyproject.toml               # Project metadata, deps, build config (maturin)
-├── uv.lock                      # Locked dependency tree
-├── README.md                    # PyPI-ready README
-├── assets/
-│   ├── devbrief-cache.gif       # Demo GIF for devbrief repo (excluded from wheel)
-│   ├── devbrief-env.gif         # Demo GIF for devbrief env (excluded from wheel)
-│   └── vhs/
-│       ├── devbrief-cache.tape  # VHS tape source for devbrief-cache.gif
-│       └── devbrief-env.tape    # VHS tape source for devbrief-env.gif
-├── LICENSE                      # MIT
-├── CLAUDE.md                    # This file — agent persistent memory
-└── .gitignore
-```
-
-**Assets policy:** `assets/` is excluded from the PyPI wheel via `[tool.maturin] exclude`. GIFs and tapes are repo-only. To regenerate: `vhs assets/vhs/devbrief-cache.tape` or `vhs assets/vhs/devbrief-env.tape`.
+- **Credential resolution:** env var → `.env` file → `~/.config/devbrief/config.toml` → keychain (future). Implemented in `devbrief.core.credentials`.
+- **Cache key:** `sha256(url + commit_sha)` → `~/.cache/devbrief/`
+- **Config file:** `~/.config/devbrief/config.toml`, permissions `600` on write.
+- **Model:** always resolved via `resolve_model()` — never hardcoded in command files.
+- **Rust extension:** `devbrief env` only. If unavailable at runtime, fall back to Python.
+- **Assets:** `assets/` excluded from PyPI wheel via `[tool.maturin] exclude`.
 
 ---
 
-## 4. Subcommand Status
+## Subcommand Status
 
-| Subcommand      | Status      | Notes                                          |
-|-----------------|-------------|------------------------------------------------|
-| devbrief repo   | LIVE        | v0.3.2, cache layer (SHA-keyed, ~/.cache/devbrief/), --no-cache/--refresh |
-| devbrief auth   | LIVE        | v0.2.0, key validation, config write/read/clear, 600 perms   |
-| devbrief logs   | LIVE        | v0.3.0, FastAPI+HTMX polling dashboard, ring buffer, file (1s tail)/stdin |
-| devbrief env    | LIVE        | v0.4.2, Rust active (maturin/PyO3), gitignore audit + .env drift + secret scan |
-| devbrief api    | PLANNED     |                                                |
-| devbrief infra  | PLANNED     |                                                |
-| devbrief pr     | PLANNED     |                                                |
-
-
+| Subcommand      | Status   | Notes                                                          |
+|-----------------|----------|----------------------------------------------------------------|
+| devbrief repo   | LIVE     | v0.3.2, SHA-keyed cache, --no-cache/--refresh                  |
+| devbrief auth   | LIVE     | v0.2.0, key validation, config write/read/clear, 600 perms     |
+| devbrief logs   | LIVE     | v0.3.0, FastAPI+HTMX polling dashboard, ring buffer, file/stdin|
+| devbrief env    | LIVE     | v0.4.2, gitignore audit + .env drift + secret scan (Rust)      |
+| devbrief api    | PLANNED  |                                                                |
+| devbrief infra  | PLANNED  |                                                                |
+| devbrief pr     | PLANNED  |                                                                |
 
 ---
 
-## 5. Credential System
+## Current Sprint
 
-**Layered resolution chain (highest priority first):**
-1. Environment variable (e.g. `ANTHROPIC_API_KEY`, `GITHUB_TOKEN`)
-2. `.env` file in working directory (loaded via `python-dotenv`)
-3. `~/.config/devbrief/config.toml` — user-level config file
-4. System keychain (future, not yet implemented)
+All subcommands through v0.4.2 are LIVE. **Next action:** await spec card before touching any subcommand.
 
-**Config file:** `~/.config/devbrief/config.toml`
-**File permissions:** `600` (user read/write only — enforce on write)
-**Rules:**
-- Never log credentials
-- Never print credentials (even partially) in normal output
-- Never commit `.env` files or `config.toml` to the repo
-- Tests must mock credential reads — never use real keys in tests
+- **CI:** `ci.yml` runs lint + type-check + test on every PR and push to `main`.
+- **Release:** `release.yml` on git tag `v*` — wheels only (no sdist), PyPI OIDC.
+- **Versioning:** semver. Python and Rust share version. Update `pyproject.toml` + tag simultaneously.
 
 ---
 
-## 6. CI/CD Rules
+## What NOT to Touch
 
-- **`ci.yml`**: Runs on every PR and push to `main`. Steps: lint (ruff), type-check, test (pytest).
-- **`release.yml`**: Runs on git tag push matching `v*`. Steps: build wheels only (no sdist — Rust extension requires Rust to build from source), publish to PyPI via trusted publishing (OIDC).
-- **Branch strategy:** `main` is protected. Feature branches: `feat/<subcommand-name>` or `feat/<short-description>`.
-- **Conventional commits:** `feat:`, `fix:`, `chore:`, `docs:`, `test:`, `refactor:`
-- **Versioning:** semver. Python and Rust share the same version number. Update `pyproject.toml` version and tag simultaneously.
-
----
-
-## 7. Coding Rules (Enforce Always)
-
-- **Python 3.11+ only** — `tomllib` is stdlib, import it directly. (`pyproject.toml` currently sets `>=3.12`.)
-- **Async-first:** Use `httpx` async for all HTTP. FastAPI handlers must be `async def`. (Current `requests` usage is tech debt to migrate.)
-- **Ruff** for linting and formatting — no other linters, no black, no flake8.
-- **Type hints everywhere** — no untyped functions, no `Any` without explanation.
-- **Rust:** `clippy` clean, zero warnings allowed.
-- **Rust testing:** `cargo test` requires two things: `crate-type = ["cdylib", "rlib"]` (rlib lets
-  the linker produce a test binary) and `PYO3_BUILD_EXTENSION_MODULE=1` (tells PyO3 not to link
-  against libpython, which may not be available as a shared lib on the host). Our tests only call
-  pure Rust functions so they do not need a live Python interpreter. Run as:
-  `PYO3_BUILD_EXTENSION_MODULE=1 cargo test --manifest-path rust/Cargo.toml`.
-  The `rust-check` CI job sets this env var automatically.
-- **Tests required** for every new command and every credential resolution path.
-- **Default model:** `claude-sonnet-4-6`. Never hardcode a model string in any command file. Model is always resolved via `resolve_model()` in `devbrief.core.credentials` (env var `DEVBRIEF_MODEL` → `config.toml [anthropic] default_model` → `"claude-sonnet-4-6"`).
-- **Graceful degradation:** If Rust extension is unavailable, fall back to Python implementation. Never hard-crash on missing native extension.
-- **Rich** for all terminal output — no raw `print()` in command handlers.
+- Do not push to `main` or merge PRs — Sebastien reviews.
+- Do not hardcode model strings — always use `resolve_model()`.
+- Do not use `print()` in command handlers — use Rich.
+- Do not commit `.env` or `config.toml`.
+- Do not build `sdist` — Rust extension requires Rust toolchain; wheels only.
+- Do not implement new subcommands without a spec card.
 
 ---
 
-## 8. Agent Boundaries
+## Conventions
 
-- **You implement. You do not decide architecture.**
-- If a spec is ambiguous, stop and ask before writing code.
-- If a decision would be hard to reverse (schema changes, public API shape, breaking changes), flag it before proceeding.
-- When a task is complete, summarize: what was built, what files changed, what tests cover it.
-- Read this file at the start of every session. If a subcommand ships or status changes, update the table in section 4.
-
----
-
-## 9. Current Task Queue
-
-1. [x] Create CLAUDE.md
-2. [x] Set up CI/CD pipeline (`ci.yml` + `release.yml`) — Rust steps present as commented stubs
-3. [x] v0.2.0: CLI restructure (`devbrief repo`), `devbrief auth`, credential + model resolution
-4. [x] v0.3.0: `devbrief logs` — FastAPI+HTMX polling dashboard, ring buffer, file/stdin
-5. [x] v0.3.1: `devbrief repo` cache layer — SHA-keyed local cache, --no-cache/--refresh flags
-6. [x] v0.3.2: `github.py` migrated from `requests` to `httpx` — closes HTTP client tech debt
-7. [x] v0.4.0: `devbrief env` — gitignore audit, .env drift (Rust), secret scan (Rust), stub types
-8. [x] Rust unit tests: `["cdylib","rlib"]`, `tempfile` dev-dep, 12 `#[cfg(test)]` tests,
-       `rust-check` CI job active, `PYO3_BUILD_EXTENSION_MODULE=1` for cargo test
-9. [ ] Await spec card before touching any subcommand
+See `.claude/rules/` for enforced coding conventions:
+- `python.md` — Python conventions, async, typing, Rich, model resolution
+- `rust.md` — PyO3/maturin, clippy, cargo test setup
+- `testing.md` — pytest structure, cargo test, credential mocking
+- `git.md` — branch naming, conventional commits, PR discipline, hard stops
